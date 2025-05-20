@@ -1,2 +1,4 @@
 discord.py
+yt_dlp
+pytube
 aiohttp
