@@ -10,7 +10,7 @@ import os
 
 intents = discord.Intents.default()
 intents.message_content = True  # jeśli chcesz używać !komend
-
+TOKEN = os.getenv("DISCORD_TOKEN")
 class MyBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="!", intents=intents)
