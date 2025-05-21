@@ -10,7 +10,7 @@ import os
 
 intents = discord.Intents.default()
 intents.message_content = True  # jeśli chcesz używać !komend
-TOKEN = os.getenv("DISCORD_TOKEN")
+
 class MyBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="!", intents=intents)
@@ -38,7 +38,7 @@ async def status(ctx, *, new_status: str):
 async def info(ctx):
     embed = discord.Embed(title="🤖 C4ackPoland", color=discord.Color.blue())
     embed.add_field(name="Autor", value="cedek.aep", inline=True)
-    embed.add_field(name="Wersja", value="3.0", inline=True)
+    embed.add_field(name="Wersja", value="3.3", inline=True)
     embed.add_field(name="Serwery", value=len(bot.guilds), inline=True)
     await ctx.send(embed=embed)
 
@@ -768,6 +768,67 @@ async def losuj(interaction: discord.Interaction):
     except Exception as e:
         await interaction.followup.send(f"❌ Wystąpił błąd: `{e}`")
 GUILD_ID = 1366790958296993802  # Wstaw ID swojego serwera testowego (w Discordzie kliknij na serwer prawym i "Kopiuj ID")
+
+# 🛡️ Zmienna na kod weryfikacyjny
+verification_code = None
+
+# 🔑 ID roli, którą otrzyma zweryfikowany użytkownik
+ROLE_ID = 1366790958481408072  # 👈 zamień na ID swojej roli
+
+# 📢 Lista ID użytkowników, którzy mają dostać powiadomienie
+notify_users = [
+    1338087563482890240,  # 👈 zamień na ID pierwszego admina
+    1068529373533184061,  # 👈 zamień na ID drugiego admina
+    1358673876141473833   # 👈 zamień na ID trzeciego admina
+]
+
+# 👑 Komenda do ustawienia kodu (tylko dla adminów)
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def nowykod(ctx, *, code):
+    global verification_code
+    verification_code = code
+    await ctx.send(f"✅ Nowy kod weryfikacyjny został ustawiony: `{code}`")
+
+# 🧍 Komenda do weryfikacji przez użytkownika
+@bot.command()
+async def kod(ctx, *, user_code):
+    global verification_code
+    try:
+        await ctx.message.delete()  # usuwa wiadomość użytkownika
+    except discord.Forbidden:
+        await ctx.send("⚠️ Nie mogę usunąć wiadomości – brak uprawnień.", delete_after=10)
+
+    if verification_code is None:
+        await ctx.send("❌ Kod weryfikacyjny nie został jeszcze ustawiony.", delete_after=10)
+        return
+
+    if user_code == verification_code:
+        role = ctx.guild.get_role(ROLE_ID)
+        if role is None:
+            await ctx.send("❌ Nie mogę znaleźć roli. Sprawdź ID.", delete_after=10)
+            return
+
+        await ctx.author.add_roles(role)
+        await ctx.send(f"✅ {ctx.author.mention}, weryfikacja zakończona sukcesem!", delete_after=10)
+
+        # Powiadomienia do 3 osób
+        for user_id in notify_users:
+            user = ctx.guild.get_member(user_id)
+            if user:
+                try:
+                    await user.send(f"🔔 Użytkownik {ctx.author.name}#{ctx.author.discriminator} został właśnie zweryfikowany.")
+                except discord.Forbidden:
+                    print(f"⚠️ Nie mogę wysłać wiadomości do {user.name}")
+    else:
+        await ctx.send("❌ Nieprawidłowy kod. Spróbuj ponownie.", delete_after=10)
+
+# ❌ Obsługa błędów komendy !nowykod
+@nowykod.error
+async def nowykod_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("❌ Nie masz uprawnień do ustawienia kodu.", delete_after=10)
+
 # Uruchomienie bota
-TOKEN = "MTM3MDc2NjUyNDE1OTEwMzA3OQ.G-KbQG.Nu8RkddEfPVaaGLr3UkI0dRwsbq_DcIjx6ta94"
+TOKEN = "MTM3MDc2NjUyNDE1OTEwMzA3OQ.Go7h1S.nWro0DlPyPFP_rGSd0STNPO05GkXY74jQfn_eI"
 bot.run(TOKEN)
